@@ -14,6 +14,7 @@ const Admin = () => {
   const [newName, setNewName] = useState('');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,27 +22,31 @@ const Admin = () => {
     refresh();
   }, [navigate]);
 
-  const refresh = () => {
-    setKeys(getKeys());
-    setLogs(getLogs());
+  const refresh = async () => {
+    setLoading(true);
+    const [k, l] = await Promise.all([getKeys(), getLogs()]);
+    setKeys(k);
+    setLogs(l);
+    setLoading(false);
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newName.trim()) return;
-    addKey(newName.trim(), newKeyValue.trim() || undefined);
+    setLoading(true);
+    await addKey(newName.trim(), newKeyValue.trim() || undefined);
     setNewName('');
     setNewKeyValue('');
-    refresh();
+    await refresh();
   };
 
-  const handleDelete = (id: string) => {
-    deleteKey(id);
-    refresh();
+  const handleDelete = async (id: string) => {
+    await deleteKey(id);
+    await refresh();
   };
 
-  const handleToggle = (id: string) => {
-    toggleKey(id);
-    refresh();
+  const handleToggle = async (id: string, currentEnabled: boolean) => {
+    await toggleKey(id, currentEnabled);
+    await refresh();
   };
 
   const handleCopy = (key: string) => {
@@ -64,7 +69,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen gradient-bg">
-      {/* Header */}
       <header className="glass-strong border-b border-border/30 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -81,7 +85,6 @@ const Admin = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Tabs */}
         <div className="flex gap-3">
           {[
             { id: 'keys' as const, label: 'Access Keys', icon: KeyRound },
@@ -112,7 +115,6 @@ const Admin = () => {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {/* Create Key */}
               <div className="glass-strong rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Plus className="w-5 h-5 text-accent" />
@@ -152,14 +154,13 @@ const Admin = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleCreate}
-                  disabled={!newName.trim()}
+                  disabled={!newName.trim() || loading}
                   className="mt-4 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-semibold flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 glow-accent"
                 >
-                  <Plus className="w-4 h-4" /> Create Key
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Create Key
                 </motion.button>
               </div>
 
-              {/* Active Keys */}
               <div className="glass-strong rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -170,7 +171,7 @@ const Admin = () => {
                     onClick={refresh}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <RefreshCw className="w-4 h-4" /> Refresh
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -190,7 +191,7 @@ const Admin = () => {
                           <p className="font-semibold">{k.name}</p>
                           <p className="mono text-xs text-primary truncate">{k.key}</p>
                           <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                            <span>Created: {new Date(k.createdAt).toLocaleDateString()}</span>
+                            <span>Created: {new Date(k.created_at).toLocaleDateString()}</span>
                             <span>Uses: {k.uses}</span>
                             <span className={k.enabled ? 'text-primary' : 'text-destructive'}>
                               {k.enabled ? '● Active' : '● Disabled'}
@@ -201,7 +202,7 @@ const Admin = () => {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => handleToggle(k.id)}
+                            onClick={() => handleToggle(k.id, k.enabled)}
                             className="p-2 rounded-lg hover:bg-secondary/50 transition-colors"
                             title={k.enabled ? 'Disable' : 'Enable'}
                           >
@@ -231,8 +232,13 @@ const Admin = () => {
                       </motion.div>
                     ))}
                   </AnimatePresence>
-                  {keys.length === 0 && (
+                  {keys.length === 0 && !loading && (
                     <p className="text-center text-muted-foreground py-8">No keys created yet</p>
+                  )}
+                  {loading && keys.length === 0 && (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
                   )}
                 </div>
               </div>
@@ -253,7 +259,7 @@ const Admin = () => {
                   <h3 className="font-bold text-lg">Search Logs ({logs.length})</h3>
                 </div>
                 <button onClick={refresh} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-                  <RefreshCw className="w-4 h-4" /> Refresh
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -270,7 +276,7 @@ const Admin = () => {
                   <tbody>
                     {logs.map((log) => (
                       <tr key={log.id} className="border-b border-border/20 hover:bg-secondary/20 transition-colors">
-                        <td className="py-3 px-2 font-medium">{log.keyName}</td>
+                        <td className="py-3 px-2 font-medium">{log.key_name}</td>
                         <td className="py-3 px-2 mono text-xs text-primary">{log.endpoint}</td>
                         <td className="py-3 px-2 mono text-xs truncate max-w-[200px]">{log.query}</td>
                         <td className="py-3 px-2">
@@ -281,13 +287,15 @@ const Admin = () => {
                           </span>
                         </td>
                         <td className="py-3 px-2 text-muted-foreground text-xs">
-                          {new Date(log.timestamp).toLocaleString()}
+                          {new Date(log.created_at).toLocaleString()}
                         </td>
                       </tr>
                     ))}
                     {logs.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="text-center text-muted-foreground py-8">No logs yet</td>
+                        <td colSpan={5} className="text-center text-muted-foreground py-8">
+                          {loading ? 'Loading...' : 'No logs yet'}
+                        </td>
                       </tr>
                     )}
                   </tbody>

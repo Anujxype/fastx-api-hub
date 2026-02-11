@@ -1,87 +1,78 @@
-// Local storage based key management for Akshu Portal
+import { supabase } from './supabase';
 
 export interface ApiKey {
   id: string;
   name: string;
   key: string;
-  createdAt: string;
+  created_at: string;
   uses: number;
   enabled: boolean;
 }
 
 export interface SearchLog {
   id: string;
-  keyName: string;
+  key_name: string;
   endpoint: string;
   query: string;
-  timestamp: string;
+  created_at: string;
   status: 'success' | 'error';
 }
 
-const KEYS_STORAGE = 'akshu_keys';
-const LOGS_STORAGE = 'akshu_logs';
 const ADMIN_PASSWORD = 'stk7890';
 
-// Initialize with default key
-function initKeys(): ApiKey[] {
-  const stored = localStorage.getItem(KEYS_STORAGE);
-  if (stored) return JSON.parse(stored);
-  const defaults: ApiKey[] = [
-    {
-      id: '1',
-      name: 'Default User',
-      key: 'test7890',
-      createdAt: new Date().toISOString(),
-      uses: 0,
-      enabled: true,
-    },
-  ];
-  localStorage.setItem(KEYS_STORAGE, JSON.stringify(defaults));
-  return defaults;
-}
-
-export function getKeys(): ApiKey[] {
-  return initKeys();
-}
-
-export function saveKeys(keys: ApiKey[]) {
-  localStorage.setItem(KEYS_STORAGE, JSON.stringify(keys));
-}
-
-export function addKey(name: string, key?: string): ApiKey {
-  const keys = getKeys();
-  const newKey: ApiKey = {
-    id: Date.now().toString(),
-    name,
-    key: key || generateKey(),
-    createdAt: new Date().toISOString(),
-    uses: 0,
-    enabled: true,
-  };
-  keys.push(newKey);
-  saveKeys(keys);
-  return newKey;
-}
-
-export function deleteKey(id: string) {
-  const keys = getKeys().filter((k) => k.id !== id);
-  saveKeys(keys);
-}
-
-export function toggleKey(id: string) {
-  const keys = getKeys().map((k) => (k.id === id ? { ...k, enabled: !k.enabled } : k));
-  saveKeys(keys);
-}
-
-export function validateAccessKey(key: string): ApiKey | null {
-  const keys = getKeys();
-  const found = keys.find((k) => k.key === key && k.enabled);
-  if (found) {
-    // increment uses
-    const updated = keys.map((k) => (k.id === found.id ? { ...k, uses: k.uses + 1 } : k));
-    saveKeys(updated);
+export async function getKeys(): Promise<ApiKey[]> {
+  const { data, error } = await supabase
+    .from('api_keys')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching keys:', error);
+    return [];
   }
-  return found || null;
+  return data || [];
+}
+
+export async function addKey(name: string, key?: string): Promise<ApiKey | null> {
+  const keyValue = key || generateKey();
+  const { data, error } = await supabase
+    .from('api_keys')
+    .insert({ name, key: keyValue })
+    .select()
+    .single();
+  if (error) {
+    console.error('Error adding key:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function deleteKey(id: string) {
+  const { error } = await supabase.from('api_keys').delete().eq('id', id);
+  if (error) console.error('Error deleting key:', error);
+}
+
+export async function toggleKey(id: string, currentEnabled: boolean) {
+  const { error } = await supabase
+    .from('api_keys')
+    .update({ enabled: !currentEnabled })
+    .eq('id', id);
+  if (error) console.error('Error toggling key:', error);
+}
+
+export async function validateAccessKey(key: string): Promise<ApiKey | null> {
+  const { data, error } = await supabase
+    .from('api_keys')
+    .select('*')
+    .eq('key', key)
+    .eq('enabled', true)
+    .single();
+  if (error || !data) return null;
+  // Increment uses
+  await supabase
+    .from('api_keys')
+    .update({ uses: (data.uses || 0) + 1 })
+    .eq('id', data.id);
+  return data;
 }
 
 export function validateAdmin(password: string): boolean {
@@ -96,16 +87,29 @@ function generateKey(): string {
 }
 
 // Logs
-export function getLogs(): SearchLog[] {
-  const stored = localStorage.getItem(LOGS_STORAGE);
-  return stored ? JSON.parse(stored) : [];
+export async function getLogs(): Promise<SearchLog[]> {
+  const { data, error } = await supabase
+    .from('search_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error) {
+    console.error('Error fetching logs:', error);
+    return [];
+  }
+  return data || [];
 }
 
-export function addLog(log: Omit<SearchLog, 'id' | 'timestamp'>) {
-  const logs = getLogs();
-  logs.unshift({ ...log, id: Date.now().toString(), timestamp: new Date().toISOString() });
-  if (logs.length > 500) logs.length = 500;
-  localStorage.setItem(LOGS_STORAGE, JSON.stringify(logs));
+export async function addLog(log: { keyName: string; endpoint: string; query: string; status: 'success' | 'error' }) {
+  const { error } = await supabase
+    .from('search_logs')
+    .insert({
+      key_name: log.keyName,
+      endpoint: log.endpoint,
+      query: log.query,
+      status: log.status,
+    });
+  if (error) console.error('Error adding log:', error);
 }
 
 export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
