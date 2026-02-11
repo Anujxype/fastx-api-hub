@@ -16,10 +16,7 @@ const Login = () => {
     setLoading(true);
     setError('');
     
-    // Simulate delay
-    await new Promise(r => setTimeout(r, 500));
-    
-    const found = validateAccessKey(key);
+    const found = await validateAccessKey(key);
     if (found) {
       sessionStorage.setItem('akshu_user', JSON.stringify(found));
       navigate('/portal');
@@ -37,7 +34,6 @@ const Login = () => {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
         <motion.div 
           className="flex flex-col items-center mb-8"
           initial={{ scale: 0.8, opacity: 0 }}
@@ -51,7 +47,6 @@ const Login = () => {
           <p className="text-muted-foreground mt-1">Secure Access Gateway</p>
         </motion.div>
 
-        {/* Login Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

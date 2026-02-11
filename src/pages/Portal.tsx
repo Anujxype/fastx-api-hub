@@ -32,10 +32,10 @@ const Portal = () => {
       const res = await fetch(url);
       const data = await res.json();
       setResult(JSON.stringify(data, null, 2));
-      addLog({ keyName: user?.name || 'Unknown', endpoint: ep.endpoint, query, status: 'success' });
+      await addLog({ keyName: user?.name || 'Unknown', endpoint: ep.endpoint, query, status: 'success' });
     } catch (err) {
       setResult(JSON.stringify({ error: 'Request failed', details: String(err) }, null, 2));
-      addLog({ keyName: user?.name || 'Unknown', endpoint: ep.endpoint, query, status: 'error' });
+      await addLog({ keyName: user?.name || 'Unknown', endpoint: ep.endpoint, query, status: 'error' });
     }
     setLoading(false);
   };
@@ -57,7 +57,6 @@ const Portal = () => {
 
   return (
     <div className="min-h-screen gradient-bg">
-      {/* Header */}
       <header className="glass-strong border-b border-border/30 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -80,7 +79,6 @@ const Portal = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Endpoint Grid */}
         <section>
           <h2 className="text-muted-foreground text-sm font-medium mb-3">Select Endpoint</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -106,18 +104,12 @@ const Portal = () => {
           </div>
         </section>
 
-        {/* Search Section */}
-        <motion.section
-          layout
-          className="glass-strong rounded-2xl p-6"
-        >
+        <motion.section layout className="glass-strong rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-2">
             <Search className="w-5 h-5 text-primary" />
             <h3 className="font-bold text-lg">{ep.name}</h3>
           </div>
-          <p className="text-muted-foreground text-sm mb-4">
-            Get details by {ep.param}
-          </p>
+          <p className="text-muted-foreground text-sm mb-4">Get details by {ep.param}</p>
           <div className="flex gap-3">
             <input
               value={query}
@@ -142,7 +134,6 @@ const Portal = () => {
           </p>
         </motion.section>
 
-        {/* Results */}
         <AnimatePresence>
           {result && (
             <motion.section
