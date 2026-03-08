@@ -289,6 +289,18 @@ const Admin = () => {
                       </motion.button>
                     </div>
                   </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wider font-medium">
+                      <CalendarClock className="w-3.5 h-3.5 inline mr-1" />Valid Until (optional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={newExpiry}
+                      onChange={(e) => setNewExpiry(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="input-glass"
+                    />
+                  </div>
                 </div>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleCreate}
                   disabled={!newName.trim() || loading} className="mt-4 px-6 btn-accent">
