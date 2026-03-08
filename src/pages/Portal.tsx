@@ -30,12 +30,30 @@ const Portal = () => {
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [ipBlocked, setIpBlocked] = useState(false);
+  const [expiryWarning, setExpiryWarning] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const stored = sessionStorage.getItem('akshu_user');
     if (!stored) { navigate('/'); return; }
-    setUser(JSON.parse(stored));
+    const parsed = JSON.parse(stored) as ApiKey;
+    setUser(parsed);
+
+    // Check IP whitelist
+    checkIpWhitelist(parsed).then(({ allowed, currentIp }) => {
+      if (!allowed) {
+        setIpBlocked(true);
+        setResult(JSON.stringify({ error: 'Access denied', message: `Your IP (${currentIp}) is not whitelisted for this key.` }, null, 2));
+      }
+    });
+
+    // Check expiry warning
+    if (parsed.expires_at) {
+      const days = Math.ceil((new Date(parsed.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      if (days <= 7 && days > 0) setExpiryWarning(`Your access key expires in ${days} day(s). Contact admin to renew.`);
+      else if (days <= 0) setExpiryWarning('Your access key has expired. Contact admin.');
+    }
   }, [navigate]);
 
   const ep = ENDPOINTS[selectedEndpoint];
