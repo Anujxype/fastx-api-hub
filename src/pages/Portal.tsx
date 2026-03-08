@@ -5,9 +5,10 @@ import {
   Search, LogOut, User, Loader2, Copy, Check, Zap, AlertTriangle, Shield,
   Smartphone, Fingerprint, Mail, Building2, Send, Landmark,
   CreditCard, Wallet, BadgeIndianRupee, Car, SearchCode, ClipboardList,
+  Megaphone, X,
   type LucideIcon
 } from 'lucide-react';
-import { ENDPOINTS, API_BASE, addLog, checkIpWhitelist, type ApiKey } from '@/lib/store';
+import { ENDPOINTS, API_BASE, addLog, checkIpWhitelist, getActiveBroadcasts, type ApiKey, type Broadcast } from '@/lib/store';
 import akshuLogo from '@/assets/akshu-logo.png';
 
 const iconMap: Record<string, LucideIcon> = {
@@ -32,6 +33,7 @@ const Portal = () => {
   const [copied, setCopied] = useState(false);
   const [ipBlocked, setIpBlocked] = useState(false);
   const [expiryWarning, setExpiryWarning] = useState<string | null>(null);
+  const [broadcastPopup, setBroadcastPopup] = useState<Broadcast | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,6 +56,13 @@ const Portal = () => {
       if (days <= 7 && days > 0) setExpiryWarning(`Your access key expires in ${days} day(s). Contact admin to renew.`);
       else if (days <= 0) setExpiryWarning('Your access key has expired. Contact admin.');
     }
+
+    // Fetch active broadcasts and show the first unseen one
+    getActiveBroadcasts().then((bcs) => {
+      const seenIds: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
+      const unseen = bcs.find(b => !seenIds.includes(b.id));
+      if (unseen) setBroadcastPopup(unseen);
+    });
   }, [navigate]);
 
   const ep = ENDPOINTS[selectedEndpoint];
@@ -140,6 +149,57 @@ const Portal = () => {
       </motion.header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Broadcast Popup */}
+        <AnimatePresence>
+          {broadcastPopup && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+              onClick={() => {
+                const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
+                localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, broadcastPopup.id]));
+                setBroadcastPopup(null);
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                className="glass-strong rounded-2xl p-6 max-w-md w-full border border-accent/30 shadow-2xl relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                    const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
+                    localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, broadcastPopup.id]));
+                    setBroadcastPopup(null);
+                  }}
+                  className="absolute top-3 right-3 p-1 rounded-lg hover:bg-secondary/50 transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+                <div className="flex items-center gap-2 mb-3">
+                  <Megaphone className="w-5 h-5 text-accent" />
+                  <h3 className="font-bold text-lg">{broadcastPopup.title}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{broadcastPopup.message}</p>
+                <p className="text-xs text-muted-foreground/50 mt-4">{new Date(broadcastPopup.created_at).toLocaleString()}</p>
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
+                    localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, broadcastPopup.id]));
+                    setBroadcastPopup(null);
+                  }}
+                  className="mt-4 w-full btn-accent py-2 text-sm"
+                >
+                  Got it
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Warnings */}
         <AnimatePresence>
           {expiryWarning && (

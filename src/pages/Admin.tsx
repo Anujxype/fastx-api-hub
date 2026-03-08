@@ -5,14 +5,16 @@ import {
   KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut, ShieldCheck,
   ToggleLeft, ToggleRight, Loader2, Monitor, Smartphone, Tablet,
   MapPin, Globe, Activity, ChevronDown, CalendarClock, AlertTriangle, Clock,
-  Shield, Bell, Heart, Wifi, WifiOff, Timer, ScrollText, X, PlusCircle
+  Shield, Bell, Heart, Wifi, WifiOff, Timer, ScrollText, X, PlusCircle,
+  Megaphone, ToggleLeft as ToggleLeftIcon, ToggleRight as ToggleRightIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import {
   getKeys, addKey, deleteKey, toggleKey, getLogs, disableExpiredKeys, updateKeyIps,
   getAuditLogs, checkEndpointHealth, ENDPOINTS,
-  type ApiKey, type SearchLog, type AuditLog
+  getBroadcasts, addBroadcast, toggleBroadcast, deleteBroadcast,
+  type ApiKey, type SearchLog, type AuditLog, type Broadcast
 } from '@/lib/store';
 
 const DeviceIcon = ({ device }: { device: string | null }) => {
@@ -216,7 +218,7 @@ const LogRow = ({ log }: { log: SearchLog }) => {
 };
 
 const Admin = () => {
-  const [tab, setTab] = useState<'keys' | 'logs' | 'stats' | 'health' | 'audit'>('keys');
+  const [tab, setTab] = useState<'keys' | 'logs' | 'stats' | 'health' | 'audit' | 'broadcast'>('keys');
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [logs, setLogs] = useState<SearchLog[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -229,6 +231,9 @@ const Admin = () => {
   const [healthResults, setHealthResults] = useState<Record<string, { status: 'up' | 'down' | 'slow'; latency: number }>>({});
   const [healthChecking, setHealthChecking] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; message: string; time: Date }[]>([]);
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [bcTitle, setBcTitle] = useState('');
+  const [bcMessage, setBcMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -272,8 +277,8 @@ const Admin = () => {
   const refresh = async () => {
     setLoading(true);
     await disableExpiredKeys();
-    const [k, l, a] = await Promise.all([getKeys(), getLogs(), getAuditLogs()]);
-    setKeys(k); setLogs(l); setAuditLogs(a);
+    const [k, l, a, b] = await Promise.all([getKeys(), getLogs(), getAuditLogs(), getBroadcasts()]);
+    setKeys(k); setLogs(l); setAuditLogs(a); setBroadcasts(b);
     setLoading(false);
   };
 
@@ -368,6 +373,7 @@ const Admin = () => {
             { id: 'stats' as const, label: 'Analytics', icon: Activity },
             { id: 'health' as const, label: 'Health', icon: Heart },
             { id: 'audit' as const, label: 'Audit', icon: ScrollText },
+            { id: 'broadcast' as const, label: 'Broadcast', icon: Megaphone },
           ]).map((t) => (
             <motion.button key={t.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => { setTab(t.id); if (t.id === 'health' && Object.keys(healthResults).length === 0) runHealthCheck(); }}
@@ -672,6 +678,94 @@ const Admin = () => {
                     );
                   })}
                   {auditLogs.length === 0 && <p className="text-center text-muted-foreground py-8">{loading ? 'Loading...' : 'No audit logs yet'}</p>}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* BROADCAST TAB */}
+          {tab === 'broadcast' && (
+            <motion.div key="broadcast" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+              <div className="glass-strong rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Megaphone className="w-5 h-5 text-accent" />
+                  <h3 className="font-bold text-lg">Send Broadcast</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">Broadcast messages appear as a popup when users login via their keys (shown only once per broadcast).</p>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wider font-medium">Title</label>
+                    <input value={bcTitle} onChange={(e) => setBcTitle(e.target.value)} placeholder="e.g., Scheduled Maintenance" className="input-glass" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wider font-medium">Message</label>
+                    <textarea value={bcMessage} onChange={(e) => setBcMessage(e.target.value)}
+                      placeholder="Enter your broadcast message..."
+                      rows={3} className="input-glass resize-none w-full" />
+                  </div>
+                </div>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={async () => {
+                    if (!bcTitle.trim() || !bcMessage.trim()) return;
+                    setLoading(true);
+                    await addBroadcast(bcTitle.trim(), bcMessage.trim());
+                    setBcTitle(''); setBcMessage('');
+                    await refresh();
+                    toast.success('Broadcast sent!');
+                  }}
+                  disabled={!bcTitle.trim() || !bcMessage.trim() || loading}
+                  className="mt-4 px-6 btn-accent">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />} Send Broadcast
+                </motion.button>
+              </div>
+
+              <div className="glass-strong rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-accent" />
+                    <h3 className="font-bold text-lg">All Broadcasts ({broadcasts.length})</h3>
+                  </div>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={refresh}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-secondary/50">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                  </motion.button>
+                </div>
+                <div className="space-y-3">
+                  <AnimatePresence>
+                    {broadcasts.map((bc) => (
+                      <motion.div key={bc.id} layout
+                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                        className={`glass-card rounded-xl p-4 ${!bc.active ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold">{bc.title}</p>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{bc.message}</p>
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>{new Date(bc.created_at).toLocaleString()}</span>
+                              <span className="flex items-center gap-1">
+                                <span className={`status-dot ${bc.active ? 'status-dot-active' : 'status-dot-inactive'}`} />
+                                {bc.active ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={async () => { await toggleBroadcast(bc.id, bc.active); await refresh(); }}
+                              className="p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                              title={bc.active ? 'Deactivate' : 'Activate'}>
+                              {bc.active ? <ToggleRightIcon className="w-5 h-5 text-primary" /> : <ToggleLeftIcon className="w-5 h-5 text-muted-foreground" />}
+                            </motion.button>
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={async () => { await deleteBroadcast(bc.id); await refresh(); }}
+                              className="p-2 rounded-lg hover:bg-destructive/20 transition-colors">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </motion.button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {broadcasts.length === 0 && !loading && <p className="text-center text-muted-foreground py-8">No broadcasts yet</p>}
                 </div>
               </div>
             </motion.div>
