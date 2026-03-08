@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, LogOut, User, Loader2, Copy, Check, Zap,
+  Search, LogOut, User, Loader2, Copy, Check, Zap, AlertTriangle, Shield,
   Smartphone, Fingerprint, Mail, Building2, Send, Landmark,
   CreditCard, Wallet, BadgeIndianRupee, Car, SearchCode, ClipboardList,
   type LucideIcon
 } from 'lucide-react';
-import { ENDPOINTS, API_BASE, addLog, type ApiKey } from '@/lib/store';
+import { ENDPOINTS, API_BASE, addLog, checkIpWhitelist, type ApiKey } from '@/lib/store';
 import akshuLogo from '@/assets/akshu-logo.png';
 
 const iconMap: Record<string, LucideIcon> = {
