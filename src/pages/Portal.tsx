@@ -33,6 +33,7 @@ const Portal = () => {
   const [copied, setCopied] = useState(false);
   const [ipBlocked, setIpBlocked] = useState(false);
   const [expiryWarning, setExpiryWarning] = useState<string | null>(null);
+  const [broadcastPopup, setBroadcastPopup] = useState<Broadcast | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
