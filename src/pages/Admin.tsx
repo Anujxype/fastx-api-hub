@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,10 +14,11 @@ const DeviceIcon = ({ device }: { device: string | null }) => {
   return <Monitor className="w-3.5 h-3.5" />;
 };
 
-const KeyCard = ({ k, onToggle, onCopy, onDelete, copied }: {
+const KeyCard = forwardRef<HTMLDivElement, {
   k: ApiKey; onToggle: () => void; onCopy: () => void; onDelete: () => void; copied: boolean;
-}) => (
+}>(({ k, onToggle, onCopy, onDelete, copied }, ref) => (
   <motion.div
+    ref={ref}
     layout
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -51,7 +52,8 @@ const KeyCard = ({ k, onToggle, onCopy, onDelete, copied }: {
       </motion.button>
     </div>
   </motion.div>
-);
+));
+KeyCard.displayName = 'KeyCard';
 
 const LogRow = ({ log }: { log: SearchLog }) => {
   const [expanded, setExpanded] = useState(false);
