@@ -287,3 +287,58 @@ export const ENDPOINTS = [
   { name: 'General Query', endpoint: '/v2', param: 'query', icon: 'SearchCode' },
   { name: 'PAN Lookup', endpoint: '/pan', param: 'pan', icon: 'ClipboardList' },
 ];
+
+// Broadcasts
+export interface Broadcast {
+  id: string;
+  title: string;
+  message: string;
+  active: boolean;
+  created_at: string;
+}
+
+export async function getBroadcasts(): Promise<Broadcast[]> {
+  const { data, error } = await supabase
+    .from('broadcasts')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('Error fetching broadcasts:', error); return []; }
+  return data || [];
+}
+
+export async function addBroadcast(title: string, message: string): Promise<Broadcast | null> {
+  const { data, error } = await supabase
+    .from('broadcasts')
+    .insert({ title, message, active: true })
+    .select()
+    .single();
+  if (error) { console.error('Error adding broadcast:', error); return null; }
+  await addAuditLog('BROADCAST_CREATED', title, message.slice(0, 100));
+  return data;
+}
+
+export async function toggleBroadcast(id: string, currentActive: boolean) {
+  const { error } = await supabase
+    .from('broadcasts')
+    .update({ active: !currentActive })
+    .eq('id', id);
+  if (error) console.error('Error toggling broadcast:', error);
+  else await addAuditLog(currentActive ? 'BROADCAST_DISABLED' : 'BROADCAST_ENABLED', id);
+}
+
+export async function deleteBroadcast(id: string) {
+  const { data } = await supabase.from('broadcasts').select('title').eq('id', id).single();
+  const { error } = await supabase.from('broadcasts').delete().eq('id', id);
+  if (error) console.error('Error deleting broadcast:', error);
+  else await addAuditLog('BROADCAST_DELETED', data?.title || id);
+}
+
+export async function getActiveBroadcasts(): Promise<Broadcast[]> {
+  const { data, error } = await supabase
+    .from('broadcasts')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('Error fetching active broadcasts:', error); return []; }
+  return data || [];
+}
