@@ -151,22 +151,33 @@ export async function getLogs(): Promise<SearchLog[]> {
 
 export async function addLog(log: { keyName: string; endpoint: string; query: string; status: 'success' | 'error' }) {
   const ua = navigator.userAgent;
-  const locationInfo = await getLocationInfo();
+  let locationInfo = { ip: 'Unknown', location: 'Unknown' };
+  try { locationInfo = await getLocationInfo(); } catch {}
 
-  const { error } = await supabase
-    .from('search_logs')
-    .insert({
+  // Try with all fields first, fallback to basic fields if columns don't exist
+  const fullPayload = {
+    key_name: log.keyName,
+    endpoint: log.endpoint,
+    query: log.query,
+    status: log.status,
+    device: getDeviceType(ua),
+    browser: getBrowserName(ua),
+    os: getOSName(ua),
+    ip: locationInfo.ip,
+    location: locationInfo.location,
+  };
+
+  const { error } = await supabase.from('search_logs').insert(fullPayload);
+  if (error) {
+    // Fallback: insert without tracking columns if they don't exist yet
+    const { error: fallbackError } = await supabase.from('search_logs').insert({
       key_name: log.keyName,
       endpoint: log.endpoint,
       query: log.query,
       status: log.status,
-      device: getDeviceType(ua),
-      browser: getBrowserName(ua),
-      os: getOSName(ua),
-      ip: locationInfo.ip,
-      location: locationInfo.location,
     });
-  if (error) console.error('Error adding log:', error);
+    if (fallbackError) console.error('Error adding log:', fallbackError);
+  }
 }
 
 export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
