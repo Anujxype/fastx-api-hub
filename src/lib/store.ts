@@ -16,6 +16,11 @@ export interface SearchLog {
   query: string;
   created_at: string;
   status: 'success' | 'error';
+  device: string | null;
+  browser: string | null;
+  os: string | null;
+  ip: string | null;
+  location: string | null;
 }
 
 const ADMIN_PASSWORD = 'stk7890';
@@ -67,7 +72,6 @@ export async function validateAccessKey(key: string): Promise<ApiKey | null> {
     .eq('enabled', true)
     .single();
   if (error || !data) return null;
-  // Increment uses
   await supabase
     .from('api_keys')
     .update({ uses: (data.uses || 0) + 1 })
@@ -86,6 +90,51 @@ function generateKey(): string {
   return result;
 }
 
+// Device detection helpers
+function getBrowserName(ua: string): string {
+  if (ua.includes('Firefox')) return 'Firefox';
+  if (ua.includes('SamsungBrowser')) return 'Samsung Browser';
+  if (ua.includes('Opera') || ua.includes('OPR')) return 'Opera';
+  if (ua.includes('Edg')) return 'Edge';
+  if (ua.includes('Chrome')) return 'Chrome';
+  if (ua.includes('Safari')) return 'Safari';
+  return 'Unknown';
+}
+
+function getOSName(ua: string): string {
+  if (ua.includes('Windows NT 10')) return 'Windows 10';
+  if (ua.includes('Windows NT 11') || (ua.includes('Windows NT 10') && ua.includes('Win64'))) return 'Windows 10+';
+  if (ua.includes('Windows')) return 'Windows';
+  if (ua.includes('Mac OS X')) return 'macOS';
+  if (ua.includes('Android')) {
+    const match = ua.match(/Android\s([\d.]+)/);
+    return match ? `Android ${match[1]}` : 'Android';
+  }
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+  if (ua.includes('Linux')) return 'Linux';
+  return 'Unknown';
+}
+
+function getDeviceType(ua: string): string {
+  if (ua.includes('Mobile') || ua.includes('Android')) return 'Mobile';
+  if (ua.includes('Tablet') || ua.includes('iPad')) return 'Tablet';
+  return 'Desktop';
+}
+
+async function getLocationInfo(): Promise<{ ip: string; location: string }> {
+  try {
+    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return { ip: 'Unknown', location: 'Unknown' };
+    const data = await res.json();
+    return {
+      ip: data.ip || 'Unknown',
+      location: [data.city, data.region, data.country_name].filter(Boolean).join(', ') || 'Unknown',
+    };
+  } catch {
+    return { ip: 'Unknown', location: 'Unknown' };
+  }
+}
+
 // Logs
 export async function getLogs(): Promise<SearchLog[]> {
   const { data, error } = await supabase
@@ -101,6 +150,9 @@ export async function getLogs(): Promise<SearchLog[]> {
 }
 
 export async function addLog(log: { keyName: string; endpoint: string; query: string; status: 'success' | 'error' }) {
+  const ua = navigator.userAgent;
+  const locationInfo = await getLocationInfo();
+
   const { error } = await supabase
     .from('search_logs')
     .insert({
@@ -108,6 +160,11 @@ export async function addLog(log: { keyName: string; endpoint: string; query: st
       endpoint: log.endpoint,
       query: log.query,
       status: log.status,
+      device: getDeviceType(ua),
+      browser: getBrowserName(ua),
+      os: getOSName(ua),
+      ip: locationInfo.ip,
+      location: locationInfo.location,
     });
   if (error) console.error('Error adding log:', error);
 }
