@@ -7,6 +7,7 @@ export interface ApiKey {
   created_at: string;
   uses: number;
   enabled: boolean;
+  expires_at: string | null;
 }
 
 export interface SearchLog {
