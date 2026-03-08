@@ -682,6 +682,94 @@ const Admin = () => {
               </div>
             </motion.div>
           )}
+
+          {/* BROADCAST TAB */}
+          {tab === 'broadcast' && (
+            <motion.div key="broadcast" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+              <div className="glass-strong rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Megaphone className="w-5 h-5 text-accent" />
+                  <h3 className="font-bold text-lg">Send Broadcast</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">Broadcast messages appear as a popup when users login via their keys (shown only once per broadcast).</p>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wider font-medium">Title</label>
+                    <input value={bcTitle} onChange={(e) => setBcTitle(e.target.value)} placeholder="e.g., Scheduled Maintenance" className="input-glass" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wider font-medium">Message</label>
+                    <textarea value={bcMessage} onChange={(e) => setBcMessage(e.target.value)}
+                      placeholder="Enter your broadcast message..."
+                      rows={3} className="input-glass resize-none w-full" />
+                  </div>
+                </div>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={async () => {
+                    if (!bcTitle.trim() || !bcMessage.trim()) return;
+                    setLoading(true);
+                    await addBroadcast(bcTitle.trim(), bcMessage.trim());
+                    setBcTitle(''); setBcMessage('');
+                    await refresh();
+                    toast.success('Broadcast sent!');
+                  }}
+                  disabled={!bcTitle.trim() || !bcMessage.trim() || loading}
+                  className="mt-4 px-6 btn-accent">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />} Send Broadcast
+                </motion.button>
+              </div>
+
+              <div className="glass-strong rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-accent" />
+                    <h3 className="font-bold text-lg">All Broadcasts ({broadcasts.length})</h3>
+                  </div>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={refresh}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-secondary/50">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                  </motion.button>
+                </div>
+                <div className="space-y-3">
+                  <AnimatePresence>
+                    {broadcasts.map((bc) => (
+                      <motion.div key={bc.id} layout
+                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                        className={`glass-card rounded-xl p-4 ${!bc.active ? 'opacity-50' : ''}`}>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold">{bc.title}</p>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{bc.message}</p>
+                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                              <span>{new Date(bc.created_at).toLocaleString()}</span>
+                              <span className="flex items-center gap-1">
+                                <span className={`status-dot ${bc.active ? 'status-dot-active' : 'status-dot-inactive'}`} />
+                                {bc.active ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={async () => { await toggleBroadcast(bc.id, bc.active); await refresh(); }}
+                              className="p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                              title={bc.active ? 'Deactivate' : 'Activate'}>
+                              {bc.active ? <ToggleRightIcon className="w-5 h-5 text-primary" /> : <ToggleLeftIcon className="w-5 h-5 text-muted-foreground" />}
+                            </motion.button>
+                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              onClick={async () => { await deleteBroadcast(bc.id); await refresh(); }}
+                              className="p-2 rounded-lg hover:bg-destructive/20 transition-colors">
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </motion.button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {broadcasts.length === 0 && !loading && <p className="text-center text-muted-foreground py-8">No broadcasts yet</p>}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
     </div>
