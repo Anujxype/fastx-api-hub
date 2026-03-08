@@ -59,7 +59,7 @@ const Portal = () => {
   const ep = ENDPOINTS[selectedEndpoint];
 
   const handleSearch = async () => {
-    if (!query.trim() || !ep) return;
+    if (!query.trim() || !ep || ipBlocked) return;
     setLoading(true);
     setResult(null);
 
