@@ -60,26 +60,56 @@
 
 @layer components {
   .glass {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50 shadow-lg;
+    background: hsla(220, 20%, 10%, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsla(220, 15%, 25%, 0.35);
+    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.25), inset 0 1px 0 hsla(210, 40%, 96%, 0.04);
   }
 
   .glass-strong {
-    @apply bg-card/80 backdrop-blur-2xl border border-border/60 shadow-xl;
+    background: hsla(220, 20%, 10%, 0.75);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid hsla(220, 15%, 25%, 0.4);
+    box-shadow: 0 12px 48px hsla(0, 0%, 0%, 0.3), inset 0 1px 0 hsla(210, 40%, 96%, 0.06);
+  }
+
+  .glass-card {
+    background: hsla(220, 20%, 10%, 0.45);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsla(220, 15%, 25%, 0.25);
+    box-shadow: 0 4px 24px hsla(0, 0%, 0%, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    background: hsla(220, 20%, 12%, 0.55);
+    border-color: hsla(165, 80%, 45%, 0.2);
+    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.3), 0 0 20px hsla(165, 80%, 45%, 0.05);
+  }
+
+  .glass-card-active {
+    background: hsla(165, 80%, 45%, 0.08);
+    border-color: hsla(165, 80%, 45%, 0.4);
+    box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.3), 0 0 30px hsla(165, 80%, 45%, 0.1);
   }
 
   .glow-primary {
-    box-shadow: 0 0 20px hsl(165 80% 45% / 0.15), 0 0 60px hsl(165 80% 45% / 0.05);
+    box-shadow: 0 0 20px hsla(165, 80%, 45%, 0.15), 0 0 60px hsla(165, 80%, 45%, 0.05);
   }
 
   .glow-accent {
-    box-shadow: 0 0 20px hsl(35 90% 55% / 0.2), 0 0 60px hsl(35 90% 55% / 0.05);
+    box-shadow: 0 0 20px hsla(35, 90%, 55%, 0.2), 0 0 60px hsla(35, 90%, 55%, 0.05);
   }
 
   .gradient-bg {
-    background: radial-gradient(ellipse at 20% 50%, hsl(165 80% 45% / 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, hsl(35 90% 55% / 0.05) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, hsl(220 60% 40% / 0.08) 0%, transparent 50%),
-                hsl(var(--background));
+    background: 
+      radial-gradient(ellipse at 20% 50%, hsla(165, 80%, 45%, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsla(35, 90%, 55%, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, hsla(220, 60%, 40%, 0.06) 0%, transparent 50%),
+      hsl(var(--background));
   }
 
   .text-gradient {
@@ -89,15 +119,83 @@
   .mono {
     font-family: 'JetBrains Mono', monospace;
   }
+
+  .input-glass {
+    @apply w-full px-4 py-3 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none transition-all mono text-sm;
+    background: hsla(220, 15%, 16%, 0.5);
+    border: 1px solid hsla(220, 15%, 25%, 0.4);
+  }
+
+  .input-glass:focus {
+    border-color: hsla(165, 80%, 45%, 0.5);
+    box-shadow: 0 0 0 3px hsla(165, 80%, 45%, 0.1), 0 0 20px hsla(165, 80%, 45%, 0.05);
+  }
+
+  .btn-primary {
+    @apply py-3 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50;
+    box-shadow: 0 0 20px hsla(165, 80%, 45%, 0.2), 0 4px 12px hsla(0, 0%, 0%, 0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 0 30px hsla(165, 80%, 45%, 0.3), 0 6px 20px hsla(0, 0%, 0%, 0.4);
+  }
+
+  .btn-accent {
+    @apply py-3 rounded-xl bg-accent text-accent-foreground font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50;
+    box-shadow: 0 0 20px hsla(35, 90%, 55%, 0.2), 0 4px 12px hsla(0, 0%, 0%, 0.3);
+  }
+
+  .btn-accent:hover:not(:disabled) {
+    box-shadow: 0 0 30px hsla(35, 90%, 55%, 0.3), 0 6px 20px hsla(0, 0%, 0%, 0.4);
+  }
+
+  .grid-pattern {
+    background-image: 
+      linear-gradient(hsla(165, 80%, 45%, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(165, 80%, 45%, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-active {
+    @apply bg-primary;
+    box-shadow: 0 0 8px hsla(165, 80%, 45%, 0.6);
+  }
+
+  .status-dot-inactive {
+    @apply bg-destructive;
+    box-shadow: 0 0 8px hsla(0, 70%, 50%, 0.4);
+  }
 }
 
 @layer utilities {
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 4s ease-in-out infinite;
+  }
+
+  .animate-grid-fade {
+    animation: grid-fade 8s ease-in-out infinite;
+  }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes grid-fade {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
 }
