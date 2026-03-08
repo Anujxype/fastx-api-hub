@@ -140,6 +140,23 @@ const Portal = () => {
       </motion.header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Warnings */}
+        <AnimatePresence>
+          {expiryWarning && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+              <p className="text-sm text-destructive font-medium">{expiryWarning}</p>
+            </motion.div>
+          )}
+          {ipBlocked && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20">
+              <Shield className="w-5 h-5 text-destructive shrink-0" />
+              <p className="text-sm text-destructive font-medium">Your IP is not whitelisted for this key. API access is restricted.</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Endpoint Grid */}
         <motion.section
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
