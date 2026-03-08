@@ -198,8 +198,8 @@ const Admin = () => {
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setLoading(true);
-    await addKey(newName.trim(), newKeyValue.trim() || undefined);
-    setNewName(''); setNewKeyValue('');
+    await addKey(newName.trim(), newKeyValue.trim() || undefined, newExpiry || null);
+    setNewName(''); setNewKeyValue(''); setNewExpiry('');
     await refresh();
   };
 
