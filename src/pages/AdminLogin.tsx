@@ -14,7 +14,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 400));
     
     if (validateAdmin(password)) {
       sessionStorage.setItem('akshu_admin', 'true');
@@ -26,19 +26,27 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-bg grid-pattern flex items-center justify-center p-4 relative overflow-hidden">
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        className="absolute w-64 h-64 rounded-full opacity-15"
+        style={{ background: 'radial-gradient(circle, hsla(35, 90%, 55%, 0.3), transparent 70%)', top: '20%', right: '20%' }}
+        animate={{ x: [0, -20, 0], y: [0, 15, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md relative z-10"
       >
-        <button
+        <motion.button
+          whileHover={{ x: -3 }}
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 text-sm"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Portal
-        </button>
+        </motion.button>
 
         <motion.div
           className="flex flex-col items-center mb-8"
@@ -46,11 +54,15 @@ const AdminLogin = () => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="w-20 h-20 rounded-full border-2 border-accent/40 flex items-center justify-center mb-4 glow-accent">
-            <ShieldCheck className="w-10 h-10 text-accent" />
-          </div>
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground mt-1">Restricted Access</p>
+          <motion.div 
+            className="w-24 h-24 rounded-2xl border border-accent/30 flex items-center justify-center mb-5 glow-accent"
+            style={{ background: 'hsla(35, 90%, 55%, 0.08)' }}
+            whileHover={{ scale: 1.05, rotate: -2 }}
+          >
+            <ShieldCheck className="w-12 h-12 text-accent" />
+          </motion.div>
+          <h1 className="text-4xl font-extrabold">Admin Panel</h1>
+          <p className="text-muted-foreground mt-1 text-sm tracking-wide uppercase">Restricted Access</p>
         </motion.div>
 
         <motion.div
@@ -62,17 +74,18 @@ const AdminLogin = () => {
           <form onSubmit={handleLogin}>
             <div className="flex items-center gap-2 mb-4">
               <Lock className="w-5 h-5 text-accent" />
-              <span className="font-semibold">Admin Password</span>
+              <span className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Admin Password</span>
             </div>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
-              className="w-full px-4 py-3 rounded-xl bg-input/50 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all mono text-sm"
+              className="input-glass"
             />
             {error && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-destructive text-sm mt-2">
+              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-destructive text-sm mt-2 flex items-center gap-1">
+                <span className="status-dot status-dot-inactive inline-block" />
                 {error}
               </motion.p>
             )}
@@ -81,7 +94,7 @@ const AdminLogin = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading || !password}
-              className="w-full mt-4 py-3 rounded-xl bg-accent text-accent-foreground font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 glow-accent"
+              className="w-full mt-5 btn-accent"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
               Access Admin Panel
@@ -89,7 +102,7 @@ const AdminLogin = () => {
           </form>
         </motion.div>
 
-        <p className="text-center text-muted-foreground/60 text-xs mt-6">
+        <p className="text-center text-muted-foreground/40 text-xs mt-6 tracking-wide">
           Administrative access is logged and monitored
         </p>
       </motion.div>

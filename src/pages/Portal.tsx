@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, LogOut, User, Loader2, Copy, Check } from 'lucide-react';
+import { Search, LogOut, User, Loader2, Copy, Check, Zap } from 'lucide-react';
 import { ENDPOINTS, API_BASE, addLog, type ApiKey } from '@/lib/store';
 import akshuLogo from '@/assets/akshu-logo.png';
 
@@ -56,103 +56,121 @@ const Portal = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen gradient-bg grid-pattern">
+      {/* Header */}
       <header className="glass-strong border-b border-border/30 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={akshuLogo} alt="Akshu" className="w-8 h-8 object-contain" />
-            <h1 className="text-lg font-bold">Akshu Portal</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold">Akshu</h1>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium border border-primary/20">Portal</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-primary">
               <User className="w-4 h-4" />
-              <span className="text-sm font-medium">{user.name}</span>
+              <span className="text-sm font-medium hidden sm:inline">{user.name}</span>
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleLogout}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm px-3 py-1.5 rounded-lg hover:bg-secondary/50"
             >
-              <LogOut className="w-4 h-4" /> Logout
-            </button>
+              <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Logout</span>
+            </motion.button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Endpoint Grid */}
         <section>
-          <h2 className="text-muted-foreground text-sm font-medium mb-3">Select Endpoint</h2>
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="w-4 h-4 text-primary" />
+            <h2 className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">Select Endpoint</h2>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {ENDPOINTS.map((ep, i) => (
+            {ENDPOINTS.map((endpoint, i) => (
               <motion.button
-                key={ep.endpoint}
-                whileHover={{ scale: 1.03 }}
+                key={endpoint.endpoint}
+                whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => { setSelectedEndpoint(i); setResult(null); setQuery(''); }}
-                className={`glass rounded-xl p-4 text-left transition-all ${
-                  selectedEndpoint === i
-                    ? 'border-primary/60 glow-primary text-primary'
-                    : 'hover:border-border'
+                className={`rounded-xl p-4 text-left transition-all ${
+                  selectedEndpoint === i ? 'glass-card-active' : 'glass-card'
                 }`}
               >
-                <span className="text-lg">{ep.icon}</span>
-                <p className={`font-semibold text-sm mt-1 ${selectedEndpoint === i ? 'text-primary' : ''}`}>
-                  {ep.name}
+                <span className="text-xl">{endpoint.icon}</span>
+                <p className={`font-semibold text-sm mt-1.5 ${selectedEndpoint === i ? 'text-primary' : 'text-foreground'}`}>
+                  {endpoint.name}
                 </p>
-                <p className="mono text-xs text-muted-foreground mt-0.5">{ep.endpoint}</p>
+                <p className="mono text-[10px] text-muted-foreground mt-0.5 truncate">{endpoint.endpoint}</p>
               </motion.button>
             ))}
           </div>
         </section>
 
+        {/* Search */}
         <motion.section layout className="glass-strong rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-1">
             <Search className="w-5 h-5 text-primary" />
             <h3 className="font-bold text-lg">{ep.name}</h3>
           </div>
-          <p className="text-muted-foreground text-sm mb-4">Get details by {ep.param}</p>
+          <p className="text-muted-foreground text-sm mb-4">
+            Search by <span className="mono text-primary/80">{ep.param}</span>
+          </p>
           <div className="flex gap-3">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder={`Enter ${ep.param}`}
-              className="flex-1 px-4 py-3 rounded-xl bg-input/50 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all mono text-sm"
+              placeholder={`Enter ${ep.param}...`}
+              className="flex-1 input-glass"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSearch}
               disabled={loading || !query.trim()}
-              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 glow-primary"
+              className="px-6 btn-primary"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              Search
+              <span className="hidden sm:inline">Search</span>
             </motion.button>
           </div>
-          <p className="mono text-xs text-primary/70 mt-3">
+          <p className="mono text-xs text-primary/50 mt-3">
             GET {ep.endpoint}?{ep.param}=&#123;value&#125;
           </p>
         </motion.section>
 
+        {/* Result */}
         <AnimatePresence>
           {result && (
             <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.98 }}
+              transition={{ duration: 0.3 }}
               className="glass-strong rounded-2xl p-6"
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold">Response</h3>
-                <button
+                <div className="flex items-center gap-2">
+                  <span className="status-dot status-dot-active" />
+                  <h3 className="font-bold">Response</h3>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary/50"
                 >
                   {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
                   {copied ? 'Copied!' : 'Copy'}
-                </button>
+                </motion.button>
               </div>
-              <pre className="bg-background/60 rounded-xl p-4 overflow-auto max-h-96 mono text-xs text-foreground/90 border border-border/30">
+              <pre className="rounded-xl p-4 overflow-auto max-h-96 mono text-xs text-foreground/90 border border-border/20" style={{ background: 'hsla(220, 25%, 6%, 0.6)' }}>
                 {result}
               </pre>
             </motion.section>
