@@ -218,7 +218,7 @@ const LogRow = ({ log }: { log: SearchLog }) => {
 };
 
 const Admin = () => {
-  const [tab, setTab] = useState<'keys' | 'logs' | 'stats' | 'health' | 'audit'>('keys');
+  const [tab, setTab] = useState<'keys' | 'logs' | 'stats' | 'health' | 'audit' | 'broadcast'>('keys');
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [logs, setLogs] = useState<SearchLog[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
