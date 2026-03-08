@@ -8,6 +8,7 @@ export interface ApiKey {
   uses: number;
   enabled: boolean;
   expires_at: string | null;
+  allowed_ips: string[] | null;
 }
 
 export interface SearchLog {
@@ -24,7 +25,36 @@ export interface SearchLog {
   location: string | null;
 }
 
+export interface AuditLog {
+  id: string;
+  action: string;
+  target: string;
+  details: string | null;
+  created_at: string;
+}
+
 const ADMIN_PASSWORD = 'stk7890';
+
+// Audit logging
+export async function addAuditLog(action: string, target: string, details?: string) {
+  const { error } = await supabase.from('audit_logs').insert({
+    action, target, details: details || null,
+  });
+  if (error) console.error('Audit log error:', error);
+}
+
+export async function getAuditLogs(): Promise<AuditLog[]> {
+  const { data, error } = await supabase
+    .from('audit_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) {
+    console.error('Error fetching audit logs:', error);
+    return [];
+  }
+  return data || [];
+}
 
 export async function getKeys(): Promise<ApiKey[]> {
   const { data, error } = await supabase
@@ -38,10 +68,11 @@ export async function getKeys(): Promise<ApiKey[]> {
   return data || [];
 }
 
-export async function addKey(name: string, key?: string, expiresAt?: string | null): Promise<ApiKey | null> {
+export async function addKey(name: string, key?: string, expiresAt?: string | null, allowedIps?: string[]): Promise<ApiKey | null> {
   const keyValue = key || generateKey();
   const payload: Record<string, unknown> = { name, key: keyValue };
   if (expiresAt) payload.expires_at = expiresAt;
+  if (allowedIps && allowedIps.length > 0) payload.allowed_ips = allowedIps;
   const { data, error } = await supabase
     .from('api_keys')
     .insert(payload)
@@ -51,20 +82,36 @@ export async function addKey(name: string, key?: string, expiresAt?: string | nu
     console.error('Error adding key:', error);
     return null;
   }
+  await addAuditLog('KEY_CREATED', name, `Key: ${keyValue.slice(0, 10)}...${allowedIps?.length ? `, IPs: ${allowedIps.join(', ')}` : ''}`);
   return data;
 }
 
 export async function deleteKey(id: string) {
+  // Get key name for audit
+  const { data: key } = await supabase.from('api_keys').select('name').eq('id', id).single();
   const { error } = await supabase.from('api_keys').delete().eq('id', id);
   if (error) console.error('Error deleting key:', error);
+  else await addAuditLog('KEY_DELETED', key?.name || id);
 }
 
 export async function toggleKey(id: string, currentEnabled: boolean) {
+  const { data: key } = await supabase.from('api_keys').select('name').eq('id', id).single();
   const { error } = await supabase
     .from('api_keys')
     .update({ enabled: !currentEnabled })
     .eq('id', id);
   if (error) console.error('Error toggling key:', error);
+  else await addAuditLog(currentEnabled ? 'KEY_DISABLED' : 'KEY_ENABLED', key?.name || id);
+}
+
+export async function updateKeyIps(id: string, allowedIps: string[]) {
+  const { data: key } = await supabase.from('api_keys').select('name').eq('id', id).single();
+  const { error } = await supabase
+    .from('api_keys')
+    .update({ allowed_ips: allowedIps.length > 0 ? allowedIps : null })
+    .eq('id', id);
+  if (error) console.error('Error updating IPs:', error);
+  else await addAuditLog('IP_WHITELIST_UPDATED', key?.name || id, `IPs: ${allowedIps.length > 0 ? allowedIps.join(', ') : 'None (open)'}`);
 }
 
 export async function validateAccessKey(key: string): Promise<ApiKey | null> {
@@ -77,7 +124,6 @@ export async function validateAccessKey(key: string): Promise<ApiKey | null> {
   if (error || !data) return null;
   // Check expiration
   if (data.expires_at && new Date(data.expires_at) < new Date()) {
-    // Auto-disable expired key
     await supabase.from('api_keys').update({ enabled: false }).eq('id', data.id);
     return null;
   }
@@ -86,6 +132,15 @@ export async function validateAccessKey(key: string): Promise<ApiKey | null> {
     .update({ uses: (data.uses || 0) + 1 })
     .eq('id', data.id);
   return data;
+}
+
+// Check IP against whitelist (client-side check)
+export async function checkIpWhitelist(apiKey: ApiKey): Promise<{ allowed: boolean; currentIp: string }> {
+  if (!apiKey.allowed_ips || apiKey.allowed_ips.length === 0) {
+    return { allowed: true, currentIp: 'Any' };
+  }
+  const { ip } = await getLocationInfo();
+  return { allowed: apiKey.allowed_ips.includes(ip), currentIp: ip };
 }
 
 // Check and auto-disable all expired keys
@@ -145,7 +200,7 @@ function getDeviceType(ua: string): string {
   return 'Desktop';
 }
 
-async function getLocationInfo(): Promise<{ ip: string; location: string }> {
+export async function getLocationInfo(): Promise<{ ip: string; location: string }> {
   try {
     const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
     if (!res.ok) return { ip: 'Unknown', location: 'Unknown' };
@@ -178,7 +233,6 @@ export async function addLog(log: { keyName: string; endpoint: string; query: st
   let locationInfo = { ip: 'Unknown', location: 'Unknown' };
   try { locationInfo = await getLocationInfo(); } catch {}
 
-  // Try with all fields first, fallback to basic fields if columns don't exist
   const fullPayload = {
     key_name: log.keyName,
     endpoint: log.endpoint,
@@ -193,7 +247,6 @@ export async function addLog(log: { keyName: string; endpoint: string; query: st
 
   const { error } = await supabase.from('search_logs').insert(fullPayload);
   if (error) {
-    // Fallback: insert without tracking columns if they don't exist yet
     const { error: fallbackError } = await supabase.from('search_logs').insert({
       key_name: log.keyName,
       endpoint: log.endpoint,
@@ -201,6 +254,20 @@ export async function addLog(log: { keyName: string; endpoint: string; query: st
       status: log.status,
     });
     if (fallbackError) console.error('Error adding log:', fallbackError);
+  }
+}
+
+// API Health check
+export async function checkEndpointHealth(endpoint: string): Promise<{ status: 'up' | 'down' | 'slow'; latency: number }> {
+  const start = Date.now();
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}?test=healthcheck`, { signal: AbortSignal.timeout(8000) });
+    const latency = Date.now() - start;
+    if (!res.ok) return { status: 'down', latency };
+    if (latency > 3000) return { status: 'slow', latency };
+    return { status: 'up', latency };
+  } catch {
+    return { status: 'down', latency: Date.now() - start };
   }
 }
 
