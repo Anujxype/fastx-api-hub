@@ -5,7 +5,8 @@ import {
   KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut, ShieldCheck,
   ToggleLeft, ToggleRight, Loader2, Monitor, Smartphone, Tablet,
   MapPin, Globe, Activity, ChevronDown, CalendarClock, AlertTriangle, Clock,
-  Shield, Bell, Heart, Wifi, WifiOff, Timer, ScrollText, X, PlusCircle
+  Shield, Bell, Heart, Wifi, WifiOff, Timer, ScrollText, X, PlusCircle,
+  Megaphone, ToggleLeft as ToggleLeftIcon, ToggleRight as ToggleRightIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
