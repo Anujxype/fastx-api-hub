@@ -14,45 +14,65 @@ const DeviceIcon = ({ device }: { device: string | null }) => {
   return <Monitor className="w-3.5 h-3.5" />;
 };
 
+const getExpiryStatus = (expiresAt: string | null) => {
+  if (!expiresAt) return { label: 'No expiry', color: 'text-muted-foreground', urgent: false, expired: false };
+  const now = new Date();
+  const exp = new Date(expiresAt);
+  const diff = exp.getTime() - now.getTime();
+  if (diff <= 0) return { label: 'Expired', color: 'text-destructive', urgent: true, expired: true };
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  if (days <= 3) return { label: `Expires in ${days}d`, color: 'text-destructive', urgent: true, expired: false };
+  if (days <= 7) return { label: `Expires in ${days}d`, color: 'text-yellow-500', urgent: true, expired: false };
+  return { label: `Expires ${exp.toLocaleDateString()}`, color: 'text-muted-foreground', urgent: false, expired: false };
+};
+
 const KeyCard = forwardRef<HTMLDivElement, {
   k: ApiKey; onToggle: () => void; onCopy: () => void; onDelete: () => void; copied: boolean;
-}>(({ k, onToggle, onCopy, onDelete, copied }, ref) => (
-  <motion.div
-    ref={ref}
-    layout
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: 20 }}
-    className={`glass-card rounded-xl p-4 flex items-center justify-between gap-4 ${!k.enabled ? 'opacity-50' : ''}`}
-  >
-    <div className="flex-1 min-w-0">
-      <p className="font-semibold">{k.name}</p>
-      <p className="mono text-xs text-primary truncate">{k.key}</p>
-      <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
-        <span>Created: {new Date(k.created_at).toLocaleDateString()}</span>
-        <span>Uses: {k.uses}</span>
-        <span className="flex items-center gap-1">
-          <span className={`status-dot ${k.enabled ? 'status-dot-active' : 'status-dot-inactive'}`} />
-          {k.enabled ? 'Active' : 'Disabled'}
-        </span>
+}>(({ k, onToggle, onCopy, onDelete, copied }, ref) => {
+  const expiry = getExpiryStatus(k.expires_at);
+
+  return (
+    <motion.div
+      ref={ref}
+      layout
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className={`glass-card rounded-xl p-4 flex items-center justify-between gap-4 ${!k.enabled || expiry.expired ? 'opacity-50' : ''}`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold">{k.name}</p>
+        <p className="mono text-xs text-primary truncate">{k.key}</p>
+        <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
+          <span>Created: {new Date(k.created_at).toLocaleDateString()}</span>
+          <span>Uses: {k.uses}</span>
+          <span className="flex items-center gap-1">
+            <span className={`status-dot ${k.enabled && !expiry.expired ? 'status-dot-active' : 'status-dot-inactive'}`} />
+            {expiry.expired ? 'Expired' : k.enabled ? 'Active' : 'Disabled'}
+          </span>
+          <span className={`flex items-center gap-1 ${expiry.color}`}>
+            {expiry.urgent ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+            {expiry.label}
+          </span>
+        </div>
       </div>
-    </div>
-    <div className="flex items-center gap-1.5 shrink-0">
-      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onToggle}
-        className="p-2 rounded-lg hover:bg-secondary/50 transition-colors" title={k.enabled ? 'Disable' : 'Enable'}>
-        {k.enabled ? <ToggleRight className="w-5 h-5 text-primary" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
-      </motion.button>
-      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onCopy}
-        className="p-2 rounded-lg hover:bg-secondary/50 transition-colors">
-        <Copy className={`w-4 h-4 ${copied ? 'text-primary' : 'text-muted-foreground'}`} />
-      </motion.button>
-      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onDelete}
-        className="p-2 rounded-lg hover:bg-destructive/20 transition-colors">
-        <Trash2 className="w-4 h-4 text-destructive" />
-      </motion.button>
-    </div>
-  </motion.div>
-));
+      <div className="flex items-center gap-1.5 shrink-0">
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onToggle}
+          className="p-2 rounded-lg hover:bg-secondary/50 transition-colors" title={k.enabled ? 'Disable' : 'Enable'}>
+          {k.enabled ? <ToggleRight className="w-5 h-5 text-primary" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onCopy}
+          className="p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+          <Copy className={`w-4 h-4 ${copied ? 'text-primary' : 'text-muted-foreground'}`} />
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onDelete}
+          className="p-2 rounded-lg hover:bg-destructive/20 transition-colors">
+          <Trash2 className="w-4 h-4 text-destructive" />
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+});
 KeyCard.displayName = 'KeyCard';
 
 const LogRow = ({ log }: { log: SearchLog }) => {
