@@ -189,6 +189,7 @@ const Admin = () => {
 
   const refresh = async () => {
     setLoading(true);
+    await disableExpiredKeys();
     const [k, l] = await Promise.all([getKeys(), getLogs()]);
     setKeys(k); setLogs(l);
     setLoading(false);
