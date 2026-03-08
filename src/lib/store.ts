@@ -38,11 +38,13 @@ export async function getKeys(): Promise<ApiKey[]> {
   return data || [];
 }
 
-export async function addKey(name: string, key?: string): Promise<ApiKey | null> {
+export async function addKey(name: string, key?: string, expiresAt?: string | null): Promise<ApiKey | null> {
   const keyValue = key || generateKey();
+  const payload: Record<string, unknown> = { name, key: keyValue };
+  if (expiresAt) payload.expires_at = expiresAt;
   const { data, error } = await supabase
     .from('api_keys')
-    .insert({ name, key: keyValue })
+    .insert(payload)
     .select()
     .single();
   if (error) {
