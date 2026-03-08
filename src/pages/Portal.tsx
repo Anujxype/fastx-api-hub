@@ -56,6 +56,13 @@ const Portal = () => {
       if (days <= 7 && days > 0) setExpiryWarning(`Your access key expires in ${days} day(s). Contact admin to renew.`);
       else if (days <= 0) setExpiryWarning('Your access key has expired. Contact admin.');
     }
+
+    // Fetch active broadcasts and show the first unseen one
+    getActiveBroadcasts().then((bcs) => {
+      const seenIds: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
+      const unseen = bcs.find(b => !seenIds.includes(b.id));
+      if (unseen) setBroadcastPopup(unseen);
+    });
   }, [navigate]);
 
   const ep = ENDPOINTS[selectedEndpoint];
