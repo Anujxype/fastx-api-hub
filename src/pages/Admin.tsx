@@ -13,7 +13,8 @@ import { supabase } from '@/lib/supabase';
 import {
   getKeys, addKey, deleteKey, toggleKey, getLogs, disableExpiredKeys, updateKeyIps,
   getAuditLogs, checkEndpointHealth, ENDPOINTS,
-  type ApiKey, type SearchLog, type AuditLog
+  getBroadcasts, addBroadcast, toggleBroadcast, deleteBroadcast,
+  type ApiKey, type SearchLog, type AuditLog, type Broadcast
 } from '@/lib/store';
 
 const DeviceIcon = ({ device }: { device: string | null }) => {
