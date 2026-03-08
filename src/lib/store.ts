@@ -115,16 +115,16 @@ export async function addLog(log: { keyName: string; endpoint: string; query: st
 export const API_BASE = 'https://anuapi.netlify.app/.netlify/functions/api';
 
 export const ENDPOINTS = [
-  { name: 'Mobile Lookup', endpoint: '/mobile', param: 'number', icon: '📱' },
-  { name: 'Aadhaar Lookup', endpoint: '/aadhaar', param: 'id', icon: '🆔' },
-  { name: 'Email Lookup', endpoint: '/email', param: 'address', icon: '📧' },
-  { name: 'GST Lookup', endpoint: '/gst', param: 'number', icon: '🏢' },
-  { name: 'Telegram Lookup', endpoint: '/telegram', param: 'user', icon: '✈️' },
-  { name: 'IFSC Lookup', endpoint: '/ifsc', param: 'code', icon: '🏦' },
-  { name: 'Ration Card Lookup', endpoint: '/rashan', param: 'aadhaar', icon: '🪪' },
-  { name: 'UPI Lookup', endpoint: '/upi', param: 'id', icon: '💳' },
-  { name: 'UPI Lookup v2', endpoint: '/upi2', param: 'id', icon: '💰' },
-  { name: 'Vehicle Lookup', endpoint: '/vehicle', param: 'registration', icon: '🚗' },
-  { name: 'General Query', endpoint: '/v2', param: 'query', icon: '🔍' },
-  { name: 'PAN Lookup', endpoint: '/pan', param: 'pan', icon: '📋' },
+  { name: 'Mobile Lookup', endpoint: '/mobile', param: 'number', icon: 'Smartphone' },
+  { name: 'Aadhaar Lookup', endpoint: '/aadhaar', param: 'id', icon: 'Fingerprint' },
+  { name: 'Email Lookup', endpoint: '/email', param: 'address', icon: 'Mail' },
+  { name: 'GST Lookup', endpoint: '/gst', param: 'number', icon: 'Building2' },
+  { name: 'Telegram Lookup', endpoint: '/telegram', param: 'user', icon: 'Send' },
+  { name: 'IFSC Lookup', endpoint: '/ifsc', param: 'code', icon: 'Landmark' },
+  { name: 'Ration Card Lookup', endpoint: '/rashan', param: 'aadhaar', icon: 'CreditCard' },
+  { name: 'UPI Lookup', endpoint: '/upi', param: 'id', icon: 'Wallet' },
+  { name: 'UPI Lookup v2', endpoint: '/upi2', param: 'id', icon: 'BadgeIndianRupee' },
+  { name: 'Vehicle Lookup', endpoint: '/vehicle', param: 'registration', icon: 'Car' },
+  { name: 'General Query', endpoint: '/v2', param: 'query', icon: 'SearchCode' },
+  { name: 'PAN Lookup', endpoint: '/pan', param: 'pan', icon: 'ClipboardList' },
 ];
