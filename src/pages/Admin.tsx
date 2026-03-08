@@ -470,14 +470,18 @@ const Admin = () => {
 
                 <div className="glass-strong rounded-2xl p-6">
                   <h3 className="font-bold mb-3">Active Keys Overview</h3>
-                  <div className="flex items-end gap-6">
+                  <div className="flex items-end gap-6 flex-wrap">
                     <div>
-                      <p className="text-3xl font-extrabold text-primary">{keys.filter(k => k.enabled).length}</p>
+                      <p className="text-3xl font-extrabold text-primary">{keys.filter(k => k.enabled && !getExpiryStatus(k.expires_at).expired).length}</p>
                       <p className="text-xs text-muted-foreground">Active</p>
                     </div>
                     <div>
                       <p className="text-3xl font-extrabold text-destructive">{keys.filter(k => !k.enabled).length}</p>
                       <p className="text-xs text-muted-foreground">Disabled</p>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-extrabold text-yellow-500">{keys.filter(k => getExpiryStatus(k.expires_at).expired).length}</p>
+                      <p className="text-xs text-muted-foreground">Expired</p>
                     </div>
                     <div>
                       <p className="text-3xl font-extrabold text-accent">{keys.reduce((sum, k) => sum + (k.uses || 0), 0)}</p>
