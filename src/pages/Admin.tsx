@@ -373,6 +373,7 @@ const Admin = () => {
             { id: 'stats' as const, label: 'Analytics', icon: Activity },
             { id: 'health' as const, label: 'Health', icon: Heart },
             { id: 'audit' as const, label: 'Audit', icon: ScrollText },
+            { id: 'broadcast' as const, label: 'Broadcast', icon: Megaphone },
           ]).map((t) => (
             <motion.button key={t.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => { setTab(t.id); if (t.id === 'health' && Object.keys(healthResults).length === 0) runHealthCheck(); }}
