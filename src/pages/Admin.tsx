@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut, ShieldCheck,
   ToggleLeft, ToggleRight, Loader2, Monitor, Smartphone, Tablet,
-  MapPin, Globe, Activity, ChevronDown, ChevronUp
+  MapPin, Globe, Activity, ChevronDown, ChevronUp, CalendarClock, AlertTriangle, Clock
 } from 'lucide-react';
-import { getKeys, addKey, deleteKey, toggleKey, getLogs, type ApiKey, type SearchLog } from '@/lib/store';
+import { getKeys, addKey, deleteKey, toggleKey, getLogs, disableExpiredKeys, type ApiKey, type SearchLog } from '@/lib/store';
 
 const DeviceIcon = ({ device }: { device: string | null }) => {
   if (device === 'Mobile') return <Smartphone className="w-3.5 h-3.5" />;
