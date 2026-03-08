@@ -7,6 +7,7 @@ export interface ApiKey {
   created_at: string;
   uses: number;
   enabled: boolean;
+  expires_at: string | null;
 }
 
 export interface SearchLog {
@@ -37,11 +38,13 @@ export async function getKeys(): Promise<ApiKey[]> {
   return data || [];
 }
 
-export async function addKey(name: string, key?: string): Promise<ApiKey | null> {
+export async function addKey(name: string, key?: string, expiresAt?: string | null): Promise<ApiKey | null> {
   const keyValue = key || generateKey();
+  const payload: Record<string, unknown> = { name, key: keyValue };
+  if (expiresAt) payload.expires_at = expiresAt;
   const { data, error } = await supabase
     .from('api_keys')
-    .insert({ name, key: keyValue })
+    .insert(payload)
     .select()
     .single();
   if (error) {
@@ -72,11 +75,32 @@ export async function validateAccessKey(key: string): Promise<ApiKey | null> {
     .eq('enabled', true)
     .single();
   if (error || !data) return null;
+  // Check expiration
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    // Auto-disable expired key
+    await supabase.from('api_keys').update({ enabled: false }).eq('id', data.id);
+    return null;
+  }
   await supabase
     .from('api_keys')
     .update({ uses: (data.uses || 0) + 1 })
     .eq('id', data.id);
   return data;
+}
+
+// Check and auto-disable all expired keys
+export async function disableExpiredKeys(): Promise<void> {
+  const { data } = await supabase
+    .from('api_keys')
+    .select('id, expires_at')
+    .eq('enabled', true)
+    .not('expires_at', 'is', null);
+  if (!data) return;
+  const now = new Date();
+  const expired = data.filter(k => k.expires_at && new Date(k.expires_at) < now);
+  for (const k of expired) {
+    await supabase.from('api_keys').update({ enabled: false }).eq('id', k.id);
+  }
 }
 
 export function validateAdmin(password: string): boolean {
