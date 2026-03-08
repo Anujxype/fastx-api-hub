@@ -231,6 +231,9 @@ const Admin = () => {
   const [healthResults, setHealthResults] = useState<Record<string, { status: 'up' | 'down' | 'slow'; latency: number }>>({});
   const [healthChecking, setHealthChecking] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; message: string; time: Date }[]>([]);
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [bcTitle, setBcTitle] = useState('');
+  const [bcMessage, setBcMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
