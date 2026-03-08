@@ -177,6 +177,7 @@ const Admin = () => {
   const [logs, setLogs] = useState<SearchLog[]>([]);
   const [newName, setNewName] = useState('');
   const [newKeyValue, setNewKeyValue] = useState('');
+  const [newExpiry, setNewExpiry] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
