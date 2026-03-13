@@ -28,18 +28,24 @@ const Login = () => {
 
   return (
     <div className="min-h-screen gradient-bg grid-pattern flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Floating orbs */}
+      {/* Floating orbs - purple theme */}
       <motion.div
         className="absolute w-72 h-72 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, hsla(165, 80%, 45%, 0.3), transparent 70%)', top: '10%', left: '15%' }}
+        style={{ background: 'radial-gradient(circle, hsla(265, 70%, 58%, 0.3), transparent 70%)', top: '10%', left: '15%' }}
         animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
         className="absolute w-56 h-56 rounded-full opacity-15"
-        style={{ background: 'radial-gradient(circle, hsla(35, 90%, 55%, 0.25), transparent 70%)', bottom: '15%', right: '10%' }}
+        style={{ background: 'radial-gradient(circle, hsla(280, 80%, 65%, 0.25), transparent 70%)', bottom: '15%', right: '10%' }}
         animate={{ x: [0, -25, 0], y: [0, 15, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute w-40 h-40 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, hsla(265, 80%, 50%, 0.4), transparent 70%)', top: '60%', left: '60%' }}
+        animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.2, 0.1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       <motion.div
@@ -55,11 +61,18 @@ const Login = () => {
           transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.div 
-            className="w-24 h-24 rounded-2xl border border-primary/30 flex items-center justify-center mb-5 glow-primary relative overflow-hidden"
-            style={{ background: 'hsla(165, 80%, 45%, 0.08)' }}
-            whileHover={{ scale: 1.05, rotate: 2 }}
+            className="w-28 h-28 rounded-2xl border border-primary/30 flex items-center justify-center mb-5 glow-primary relative overflow-hidden"
+            style={{ background: 'hsla(265, 70%, 58%, 0.08)' }}
+            whileHover={{ scale: 1.08, rotate: 3 }}
+            transition={{ type: 'spring', stiffness: 300 }}
           >
-            <img src={akshuLogo} alt="Akshu" className="w-14 h-14 object-contain relative z-10" />
+            <motion.div
+              className="absolute inset-0"
+              style={{ background: 'radial-gradient(circle at 50% 50%, hsla(265, 70%, 58%, 0.15), transparent 70%)' }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+            <img src={akshuLogo} alt="Akshu" className="w-20 h-20 object-contain relative z-10" />
           </motion.div>
           <h1 className="text-4xl font-extrabold tracking-tight">
             <span className="text-gradient">Akshu</span>

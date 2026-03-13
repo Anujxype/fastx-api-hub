@@ -2,12 +2,13 @@ import { useState, useEffect, forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut, ShieldCheck,
+  KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut,
   ToggleLeft, ToggleRight, Loader2, Monitor, Smartphone, Tablet,
   MapPin, Globe, Activity, ChevronDown, CalendarClock, AlertTriangle, Clock,
   Shield, Bell, Heart, Wifi, WifiOff, Timer, ScrollText, X, PlusCircle,
   Megaphone, ToggleLeft as ToggleLeftIcon, ToggleRight as ToggleRightIcon
 } from 'lucide-react';
+import akshuLogo from '@/assets/akshu-logo.png';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import {
@@ -338,10 +339,12 @@ const Admin = () => {
         className="glass-strong border-b border-border/30 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ShieldCheck className="w-7 h-7 text-accent" />
+            <motion.img src={akshuLogo} alt="Akshu" className="w-8 h-8 object-contain"
+              whileHover={{ rotate: 15, scale: 1.1 }} transition={{ type: 'spring', stiffness: 300 }} />
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold">Akshu</h1>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium border border-accent/20">Admin</span>
+              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 400 }}
+                className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium border border-accent/20">Admin</motion.span>
             </div>
           </div>
           <div className="flex items-center gap-3">
