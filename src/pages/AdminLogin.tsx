@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Lock, Loader2, ArrowLeft } from 'lucide-react';
 import { validateAdmin } from '@/lib/store';
+import akshuLogo from '@/assets/akshu-logo.png';
 
 const AdminLogin = () => {
   const [password, setPassword] = useState('');
@@ -29,9 +30,15 @@ const AdminLogin = () => {
     <div className="min-h-screen gradient-bg grid-pattern flex items-center justify-center p-4 relative overflow-hidden">
       <motion.div
         className="absolute w-64 h-64 rounded-full opacity-15"
-        style={{ background: 'radial-gradient(circle, hsla(35, 90%, 55%, 0.3), transparent 70%)', top: '20%', right: '20%' }}
+        style={{ background: 'radial-gradient(circle, hsla(280, 80%, 65%, 0.3), transparent 70%)', top: '20%', right: '20%' }}
         animate={{ x: [0, -20, 0], y: [0, 15, 0] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute w-48 h-48 rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, hsla(265, 70%, 58%, 0.35), transparent 70%)', bottom: '25%', left: '15%' }}
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       <motion.div
@@ -55,13 +62,20 @@ const AdminLogin = () => {
           transition={{ delay: 0.2 }}
         >
           <motion.div 
-            className="w-24 h-24 rounded-2xl border border-accent/30 flex items-center justify-center mb-5 glow-accent"
-            style={{ background: 'hsla(35, 90%, 55%, 0.08)' }}
-            whileHover={{ scale: 1.05, rotate: -2 }}
+            className="w-28 h-28 rounded-2xl border border-accent/30 flex items-center justify-center mb-5 glow-accent relative overflow-hidden"
+            style={{ background: 'hsla(280, 80%, 65%, 0.08)' }}
+            whileHover={{ scale: 1.08, rotate: -3 }}
+            transition={{ type: 'spring', stiffness: 300 }}
           >
-            <ShieldCheck className="w-12 h-12 text-accent" />
+            <motion.div
+              className="absolute inset-0"
+              style={{ background: 'radial-gradient(circle at 50% 50%, hsla(280, 80%, 65%, 0.15), transparent 70%)' }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+            <img src={akshuLogo} alt="Akshu" className="w-20 h-20 object-contain relative z-10" />
           </motion.div>
-          <h1 className="text-4xl font-extrabold">Admin Panel</h1>
+          <h1 className="text-4xl font-extrabold text-gradient">Admin Panel</h1>
           <p className="text-muted-foreground mt-1 text-sm tracking-wide uppercase">Restricted Access</p>
         </motion.div>
 
