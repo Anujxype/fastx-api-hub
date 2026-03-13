@@ -142,7 +142,7 @@ const Portal = () => {
             style={{
               width: 4 + Math.random() * 6,
               height: 4 + Math.random() * 6,
-              background: i % 2 === 0 ? 'hsla(165, 80%, 45%, 0.15)' : 'hsla(35, 90%, 55%, 0.1)',
+              background: i % 2 === 0 ? 'hsla(265, 70%, 58%, 0.15)' : 'hsla(280, 80%, 65%, 0.1)',
               left: `${10 + Math.random() * 80}%`,
               top: `${10 + Math.random() * 80}%`,
             }}
