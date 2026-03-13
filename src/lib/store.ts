@@ -35,25 +35,23 @@ export interface AuditLog {
 
 const ADMIN_PASSWORD = 'stk7890';
 
-// Audit logging
+// Audit logging — gracefully handles missing table
 export async function addAuditLog(action: string, target: string, details?: string) {
-  const { error } = await supabase.from('audit_logs').insert({
-    action, target, details: details || null,
-  });
-  if (error) console.error('Audit log error:', error);
+  try {
+    await supabase.from('audit_logs').insert({ action, target, details: details || null });
+  } catch { /* table may not exist yet */ }
 }
 
 export async function getAuditLogs(): Promise<AuditLog[]> {
-  const { data, error } = await supabase
-    .from('audit_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(200);
-  if (error) {
-    console.error('Error fetching audit logs:', error);
-    return [];
-  }
-  return data || [];
+  try {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) return [];
+    return data || [];
+  } catch { return []; }
 }
 
 export async function getKeys(): Promise<ApiKey[]> {
@@ -65,7 +63,11 @@ export async function getKeys(): Promise<ApiKey[]> {
     console.error('Error fetching keys:', error);
     return [];
   }
-  return data || [];
+  return (data || []).map(k => ({
+    ...k,
+    expires_at: k.expires_at ?? null,
+    allowed_ips: k.allowed_ips ?? null,
+  }));
 }
 
 export async function addKey(name: string, key?: string, expiresAt?: string | null, allowedIps?: string[]): Promise<ApiKey | null> {
@@ -87,7 +89,6 @@ export async function addKey(name: string, key?: string, expiresAt?: string | nu
 }
 
 export async function deleteKey(id: string) {
-  // Get key name for audit
   const { data: key } = await supabase.from('api_keys').select('name').eq('id', id).single();
   const { error } = await supabase.from('api_keys').delete().eq('id', id);
   if (error) console.error('Error deleting key:', error);
@@ -134,7 +135,7 @@ export async function validateAccessKey(key: string): Promise<ApiKey | null> {
   return data;
 }
 
-// Check IP against whitelist (client-side check)
+// Check IP against whitelist
 export async function checkIpWhitelist(apiKey: ApiKey): Promise<{ allowed: boolean; currentIp: string }> {
   if (!apiKey.allowed_ips || apiKey.allowed_ips.length === 0) {
     return { allowed: true, currentIp: 'Any' };
@@ -143,19 +144,21 @@ export async function checkIpWhitelist(apiKey: ApiKey): Promise<{ allowed: boole
   return { allowed: apiKey.allowed_ips.includes(ip), currentIp: ip };
 }
 
-// Check and auto-disable all expired keys
+// Check and auto-disable all expired keys — gracefully handles missing column
 export async function disableExpiredKeys(): Promise<void> {
-  const { data } = await supabase
-    .from('api_keys')
-    .select('id, expires_at')
-    .eq('enabled', true)
-    .not('expires_at', 'is', null);
-  if (!data) return;
-  const now = new Date();
-  const expired = data.filter(k => k.expires_at && new Date(k.expires_at) < now);
-  for (const k of expired) {
-    await supabase.from('api_keys').update({ enabled: false }).eq('id', k.id);
-  }
+  try {
+    const { data } = await supabase
+      .from('api_keys')
+      .select('id, expires_at')
+      .eq('enabled', true)
+      .not('expires_at', 'is', null);
+    if (!data) return;
+    const now = new Date();
+    const expired = data.filter(k => k.expires_at && new Date(k.expires_at) < now);
+    for (const k of expired) {
+      await supabase.from('api_keys').update({ enabled: false }).eq('id', k.id);
+    }
+  } catch { /* expires_at column may not exist yet */ }
 }
 
 export function validateAdmin(password: string): boolean {
@@ -200,18 +203,42 @@ function getDeviceType(ua: string): string {
   return 'Desktop';
 }
 
+// IP & Location — multiple fallback APIs
 export async function getLocationInfo(): Promise<{ ip: string; location: string }> {
+  // Try primary: ipapi.co
   try {
     const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return { ip: 'Unknown', location: 'Unknown' };
-    const data = await res.json();
-    return {
-      ip: data.ip || 'Unknown',
-      location: [data.city, data.region, data.country_name].filter(Boolean).join(', ') || 'Unknown',
-    };
-  } catch {
-    return { ip: 'Unknown', location: 'Unknown' };
-  }
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ip) return {
+        ip: data.ip,
+        location: [data.city, data.region, data.country_name].filter(Boolean).join(', ') || 'Unknown',
+      };
+    }
+  } catch { /* fallback */ }
+
+  // Fallback 1: ip-api.com
+  try {
+    const res = await fetch('http://ip-api.com/json/?fields=query,city,regionName,country', { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.query) return {
+        ip: data.query,
+        location: [data.city, data.regionName, data.country].filter(Boolean).join(', ') || 'Unknown',
+      };
+    }
+  } catch { /* fallback */ }
+
+  // Fallback 2: just get IP
+  try {
+    const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      return { ip: data.ip || 'Unknown', location: 'Unknown' };
+    }
+  } catch { /* give up */ }
+
+  return { ip: 'Unknown', location: 'Unknown' };
 }
 
 // Logs
@@ -257,15 +284,18 @@ export async function addLog(log: { keyName: string; endpoint: string; query: st
   }
 }
 
-// API Health check
+// API Health check — treat 400 (missing param) as UP since API responded
 export async function checkEndpointHealth(endpoint: string): Promise<{ status: 'up' | 'down' | 'slow'; latency: number }> {
   const start = Date.now();
   try {
     const res = await fetch(`${API_BASE}${endpoint}?test=healthcheck`, { signal: AbortSignal.timeout(8000) });
     const latency = Date.now() - start;
-    if (!res.ok) return { status: 'down', latency };
-    if (latency > 3000) return { status: 'slow', latency };
-    return { status: 'up', latency };
+    // 400 = "missing parameter" means the API is alive and responding
+    if (res.ok || res.status === 400) {
+      if (latency > 3000) return { status: 'slow', latency };
+      return { status: 'up', latency };
+    }
+    return { status: 'down', latency };
   } catch {
     return { status: 'down', latency: Date.now() - start };
   }
