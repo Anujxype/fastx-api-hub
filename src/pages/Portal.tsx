@@ -5,7 +5,7 @@ import {
   Search, LogOut, User, Loader2, Copy, Check, Zap, AlertTriangle, Shield,
   Smartphone, Fingerprint, Mail, Building2, Send, Landmark,
   CreditCard, Wallet, BadgeIndianRupee, Car, SearchCode, ClipboardList,
-  Megaphone, X,
+  Megaphone, X, Download, Sparkles,
   type LucideIcon
 } from 'lucide-react';
 import { ENDPOINTS, API_BASE, addLog, checkIpWhitelist, getActiveBroadcasts, type ApiKey, type Broadcast } from '@/lib/store';
@@ -33,7 +33,8 @@ const Portal = () => {
   const [copied, setCopied] = useState(false);
   const [ipBlocked, setIpBlocked] = useState(false);
   const [expiryWarning, setExpiryWarning] = useState<string | null>(null);
-  const [broadcastPopup, setBroadcastPopup] = useState<Broadcast | null>(null);
+  const [broadcastQueue, setBroadcastQueue] = useState<Broadcast[]>([]);
+  const [currentBroadcast, setCurrentBroadcast] = useState<Broadcast | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -57,13 +58,30 @@ const Portal = () => {
       else if (days <= 0) setExpiryWarning('Your access key has expired. Contact admin.');
     }
 
-    // Fetch active broadcasts and show the first unseen one
+    // Fetch active broadcasts and queue all unseen ones
     getActiveBroadcasts().then((bcs) => {
       const seenIds: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
-      const unseen = bcs.find(b => !seenIds.includes(b.id));
-      if (unseen) setBroadcastPopup(unseen);
+      const unseen = bcs.filter(b => !seenIds.includes(b.id));
+      if (unseen.length > 0) {
+        setBroadcastQueue(unseen.slice(1));
+        setCurrentBroadcast(unseen[0]);
+      }
     });
   }, [navigate]);
+
+  const dismissBroadcast = () => {
+    if (!currentBroadcast) return;
+    // Mark as seen permanently
+    const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
+    localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, currentBroadcast.id]));
+    // Show next in queue or close
+    if (broadcastQueue.length > 0) {
+      setCurrentBroadcast(broadcastQueue[0]);
+      setBroadcastQueue(prev => prev.slice(1));
+    } else {
+      setCurrentBroadcast(null);
+    }
+  };
 
   const ep = ENDPOINTS[selectedEndpoint];
 
@@ -93,6 +111,19 @@ const Portal = () => {
     }
   };
 
+  const handleDownload = () => {
+    if (!result) return;
+    const blob = new Blob([result], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `akshu_${ep.endpoint.replace('/', '')}_${query}_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem('akshu_user');
     navigate('/');
@@ -102,6 +133,34 @@ const Portal = () => {
 
   return (
     <div className="min-h-screen gradient-bg grid-pattern">
+      {/* Floating particles */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: 4 + Math.random() * 6,
+              height: 4 + Math.random() * 6,
+              background: i % 2 === 0 ? 'hsla(165, 80%, 45%, 0.15)' : 'hsla(35, 90%, 55%, 0.1)',
+              left: `${10 + Math.random() * 80}%`,
+              top: `${10 + Math.random() * 80}%`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              x: [0, 15, 0],
+              opacity: [0.3, 0.7, 0.3],
+            }}
+            transition={{
+              duration: 4 + Math.random() * 4,
+              repeat: Infinity,
+              delay: i * 0.5,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
+
       {/* Header */}
       <motion.header
         initial={{ y: -40, opacity: 0 }}
@@ -148,58 +207,78 @@ const Portal = () => {
         </div>
       </motion.header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6 relative z-10">
         {/* Broadcast Popup */}
         <AnimatePresence>
-          {broadcastPopup && (
+          {currentBroadcast && (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-              onClick={() => {
-                const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
-                localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, broadcastPopup.id]));
-                setBroadcastPopup(null);
-              }}
             >
               <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                initial={{ scale: 0.8, opacity: 0, y: 40 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                exit={{ scale: 0.8, opacity: 0, y: 40 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className="glass-strong rounded-2xl p-6 max-w-md w-full border border-accent/30 shadow-2xl relative"
-                onClick={(e) => e.stopPropagation()}
+                className="glass-strong rounded-2xl p-6 max-w-md w-full border border-accent/30 shadow-2xl relative overflow-hidden"
               >
+                {/* Decorative glow */}
+                <motion.div
+                  className="absolute -top-20 -right-20 w-40 h-40 rounded-full"
+                  style={{ background: 'radial-gradient(circle, hsla(35, 90%, 55%, 0.15), transparent 70%)' }}
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
                 <button
-                  onClick={() => {
-                    const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
-                    localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, broadcastPopup.id]));
-                    setBroadcastPopup(null);
-                  }}
-                  className="absolute top-3 right-3 p-1 rounded-lg hover:bg-secondary/50 transition-colors"
+                  onClick={dismissBroadcast}
+                  className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-secondary/50 transition-colors z-10"
                 >
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
-                <div className="flex items-center gap-2 mb-3">
-                  <Megaphone className="w-5 h-5 text-accent" />
-                  <h3 className="font-bold text-lg">{broadcastPopup.title}</h3>
+                <div className="relative z-10">
+                  <motion.div
+                    className="flex items-center gap-2 mb-3"
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, -10, 10, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+                    >
+                      <Megaphone className="w-5 h-5 text-accent" />
+                    </motion.div>
+                    <h3 className="font-bold text-lg">{currentBroadcast.title}</h3>
+                  </motion.div>
+                  <motion.p
+                    className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {currentBroadcast.message}
+                  </motion.p>
+                  <p className="text-xs text-muted-foreground/50 mt-4">
+                    {new Date(currentBroadcast.created_at).toLocaleString()}
+                    {broadcastQueue.length > 0 && (
+                      <span className="ml-2 text-accent">+{broadcastQueue.length} more</span>
+                    )}
+                  </p>
+                  <motion.button
+                    whileHover={{ scale: 1.02, boxShadow: '0 0 30px hsla(35, 90%, 55%, 0.3)' }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={dismissBroadcast}
+                    className="mt-4 w-full btn-accent py-2.5 text-sm rounded-xl flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Got it
+                  </motion.button>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{broadcastPopup.message}</p>
-                <p className="text-xs text-muted-foreground/50 mt-4">{new Date(broadcastPopup.created_at).toLocaleString()}</p>
-                <motion.button
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    const seen: string[] = JSON.parse(localStorage.getItem('akshu_seen_broadcasts') || '[]');
-                    localStorage.setItem('akshu_seen_broadcasts', JSON.stringify([...seen, broadcastPopup.id]));
-                    setBroadcastPopup(null);
-                  }}
-                  className="mt-4 w-full btn-accent py-2 text-sm"
-                >
-                  Got it
-                </motion.button>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
+
         {/* Warnings */}
         <AnimatePresence>
           {expiryWarning && (
@@ -217,6 +296,7 @@ const Portal = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
         {/* Endpoint Grid */}
         <motion.section
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -355,29 +435,46 @@ const Portal = () => {
                   />
                   <h3 className="font-bold">Response</h3>
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary/50"
-                >
-                  <AnimatePresence mode="wait">
-                    {copied ? (
-                      <motion.div key="check" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}>
-                        <Check className="w-4 h-4 text-primary" />
-                      </motion.div>
-                    ) : (
-                      <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                        <Copy className="w-4 h-4" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  {copied ? 'Copied!' : 'Copy'}
-                </motion.button>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary/50"
+                  >
+                    <AnimatePresence mode="wait">
+                      {copied ? (
+                        <motion.div key="check" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}>
+                          <Check className="w-4 h-4 text-primary" />
+                        </motion.div>
+                      ) : (
+                        <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                          <Copy className="w-4 h-4" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {copied ? 'Copied!' : 'Copy'}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDownload}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary/50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Download</span>
+                  </motion.button>
+                </div>
               </div>
-              <pre className="rounded-xl p-4 overflow-auto max-h-96 mono text-xs text-foreground/90 border border-border/20" style={{ background: 'hsla(220, 25%, 6%, 0.6)' }}>
+              <motion.pre
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15 }}
+                className="rounded-xl p-4 overflow-auto max-h-96 mono text-xs text-foreground/90 border border-border/20"
+                style={{ background: 'hsla(220, 25%, 6%, 0.6)' }}
+              >
                 {result}
-              </pre>
+              </motion.pre>
             </motion.section>
           )}
         </AnimatePresence>
