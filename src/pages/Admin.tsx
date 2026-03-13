@@ -2,12 +2,13 @@ import { useState, useEffect, forwardRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut, ShieldCheck,
+  KeyRound, FileText, Plus, Trash2, Copy, RefreshCw, LogOut,
   ToggleLeft, ToggleRight, Loader2, Monitor, Smartphone, Tablet,
   MapPin, Globe, Activity, ChevronDown, CalendarClock, AlertTriangle, Clock,
   Shield, Bell, Heart, Wifi, WifiOff, Timer, ScrollText, X, PlusCircle,
   Megaphone, ToggleLeft as ToggleLeftIcon, ToggleRight as ToggleRightIcon
 } from 'lucide-react';
+import akshuLogo from '@/assets/akshu-logo.png';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import {
